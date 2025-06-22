@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+import time
 
 # Fitness function: Calculates the total distance of a tour
 # The lower the distance, the better the solution
@@ -153,17 +154,16 @@ def genetic_algorithm(cities, population_size, generations, tournament_size, mut
     return best_tour, best_distance, best_distances
 
 # Visualization: Plots the tour and optionally labels each city with its order
-def plot_tour(cities, tour, title="En İyi Tur", show_labels=True):
+def plot_tour(cities, tour, title="Best Tour", show_labels=True, elapsed_time=None, generations=None, mutation_rate=None):
     """
     Plots the cities and the tour using matplotlib.
     - The tour is shown as a blue line.
     - The first city (start) is marked with a green circle.
     - The last city (just before returning to start) is marked with a red X.
     - If show_labels=True, each city is labeled with its order in the tour.
-    cities: Numpy array of city coordinates
-    tour: List of city indices (order)
-    title: Plot title
-    show_labels: Whether to show city order labels (default: True)
+    - elapsed_time: Algorithm runtime (seconds)
+    - generations: Number of generations
+    - mutation_rate: Mutation rate
     """
     tour_cities = cities[tour + [tour[0]]]  # Add the starting city at the end to close the tour
     plt.figure(figsize=(8, 6))
@@ -183,6 +183,16 @@ def plot_tour(cities, tour, title="En İyi Tur", show_labels=True):
     plt.ylabel('Y')
     plt.grid(True)
     plt.legend()
+    # Show extra info at the top
+    info_text = ""
+    if elapsed_time is not None:
+        info_text += f"Time: {elapsed_time:.2f} s"
+    if generations is not None:
+        info_text += f" | Generations: {generations}"
+    if mutation_rate is not None:
+        info_text += f" | Mutation Rate: {mutation_rate}"
+    if info_text:
+        plt.gcf().text(0.5, 0.96, info_text, fontsize=11, color='darkred', ha='center', va='top', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none'))
     plt.show()
 
 if __name__ == "__main__":
@@ -200,6 +210,9 @@ if __name__ == "__main__":
     df = pd.read_csv(args.input)
     cities = df.values  # (N, 2) numpy array
 
+    # Measure algorithm runtime
+    start_time = time.time()
+
     # Run the genetic algorithm
     best_tour, best_distance, best_distances = genetic_algorithm(
         cities,
@@ -210,9 +223,20 @@ if __name__ == "__main__":
         elitism_rate=args.elitism
     )
 
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
     # Print the best tour and its total distance
     print("\nBest tour order:", best_tour)
     print(f"Total distance: {best_distance:.4f}")
+    print(f"Algorithm runtime: {elapsed_time:.2f} seconds")
 
     # Plot the best tour (with city order labels by default)
-    plot_tour(cities, best_tour, title=f"Best Tour (Distance: {best_distance:.2f})", show_labels=True)
+    plot_tour(
+        cities, best_tour,
+        title=f"Best Tour (Distance: {best_distance:.2f})",
+        show_labels=True,
+        elapsed_time=elapsed_time,
+        generations=args.generations,
+        mutation_rate=args.mutation
+    )
